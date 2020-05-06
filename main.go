@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"image/jpeg"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/fogleman/gg"
+	"github.com/nfnt/resize"
 )
 
 func main() {
@@ -130,66 +132,106 @@ func (c *circle) At(x, y int) color.Color {
 	return color.Alpha{0}
 }
 
-func addMe(dc *gg.Context) error {
+func circleCropMe(imagePath string) (string, error) {
 
-	// Read image from file that already exists
-	existingImageFile, err := os.Open("apple-icon-180x180.png")
+	existingImageFile, err := os.Open(imagePath)
 	if err != nil {
-		panic("error")
-		// Handle error
+		return "", err
 	}
 	defer existingImageFile.Close()
 
 	// Calling the generic image.Decode() will tell give us the data
 	// and type of image it is as a string. We expect "png"
-	_, imageType, err := image.Decode(existingImageFile)
+	_, imageData, err := image.Decode(existingImageFile)
 	if err != nil {
-		panic("error")
+		return "", err
 	}
-	// fmt.Println(imageData)
-	fmt.Println(imageType)
 
 	// We only need this because we already read from the file
 	// We have to reset the file pointer back to beginning
 	existingImageFile.Seek(0, 0)
 
-	// Alternatively, since we know it is a png already
-	// we can call png.Decode() directly
-	src, err := png.Decode(existingImageFile)
-	if err != nil {
-		// Handle error
+	// Decode to image.Image
+	var src image.Image
+	if imageData == "jpeg" {
+		src, err = jpeg.Decode(existingImageFile)
+	} else if imageData == "png" {
+		src, err = png.Decode(existingImageFile)
+	} else {
+		err = errors.New(fmt.Sprintf("unsupported imageData: %s", imageData))
 	}
+
+	if err != nil {
+		return "", err
+	}
+
+	src = resize.Resize(180, 0, src, resize.Lanczos3)
 
 	dst := image.NewRGBA(src.Bounds())
 
-	p := &image.Point{90, 90}
+	centerPoint := &image.Point{src.Bounds().Dx() / 2, src.Bounds().Dy() / 2}
+	// Assuming square image
+	r := src.Bounds().Dx() / 2
+	circleMask := &circle{*centerPoint, r}
+	draw.DrawMask(dst, dst.Bounds(), src, image.ZP, circleMask, image.ZP, draw.Over)
 
-	draw.DrawMask(dst, dst.Bounds(), src, image.ZP, &circle{*p, 85}, image.ZP, draw.Over)
+	// rotatedDst := imaging.Rotate(dst, 45.0, color.Transparent)
 
-	outputFile, err := os.Create("test.png")
+	outputFname := "circular-me.png"
+	outputFile, err := os.Create(outputFname)
 	if err != nil {
-		// Handle error
+		return "", err
 	}
+	defer outputFile.Close()
 
 	// Encode takes a writer interface and an image interface
 	// We pass it the File and the RGBA
 	err = png.Encode(outputFile, dst)
 	if err != nil {
-
+		return "", err
 	}
 
-	// Don't forget to close files
-	outputFile.Close()
+	return outputFname, nil
+}
 
-	meImage, err := gg.LoadImage("test.png")
+func addMe(dc *gg.Context) error {
+
+	// Read image from file that already exists
+	croppedMe, err := circleCropMe("me.jpg")
 	if err != nil {
 		return err
 	}
-	dc.DrawImage(meImage, 0, 0)
+
+	meImage, err := gg.LoadImage(croppedMe)
+	if err != nil {
+		return err
+	}
+
+	// gg Draw circle then
+	fmt.Println(meImage.Bounds().Dx())
+
+	// TODO work out numbers properly (Don't hack it)
+	dc.DrawCircle(1086.5, 115, float64(meImage.Bounds().Dx()/2))
 	// dc.SetRGB(200, 200, 0)
-	// dc.DrawCircle(400, 400, 100)
-	// dc.Fill()
-	// dc.DrawCircle(0, 0, 20)
+
+	dc.SetHexColor("#ffffff")
+	dc.FillPreserve()
+	dc.SetLineWidth(10)
+	dc.Stroke()
+	// dc.Rotate(gg.Radians(10))
+
+	// TODO work out numbers properly (Don't hack it)
+	// dc.DrawImageAnchored(meImage, 1090, -75, 0.5, 0.5)
+	dc.DrawImage(meImage, 1020, 50)
+
+	// iw, ih := meImage.Bounds().Dx(), meImage.Bounds().Dy()
+	// dc.SetHexColor("#0000ff")
+	// dc.SetLineWidth(2)
+	// dc.Rotate(gg.Radians(10))
+	// dc.Draw Rectangle(100, 0, float64(iw), float64(ih)/2+20.0)
+	// dc.StrokePreserve()
+	// dc.Clip()
+	// dc.DrawImageAnchored(meImage, 100, 0, 0.0, 0.0)
 
 	return nil
 }
