@@ -211,18 +211,33 @@ func addMe(dc *gg.Context) error {
 	fmt.Println(meImage.Bounds().Dx())
 
 	// TODO work out numbers properly (Don't hack it)
-	dc.DrawCircle(1086.5, 115, float64(meImage.Bounds().Dx()/2))
+    // SETTING ONE
+    // dc.DrawCircle(1086.5, 115, float64(meImage.Bounds().Dx()/2))
 	// dc.SetRGB(200, 200, 0)
 
 	dc.SetHexColor("#ffffff")
 	dc.FillPreserve()
 	dc.SetLineWidth(10)
 	dc.Stroke()
-	// dc.Rotate(gg.Radians(10))
+    // dc.Rotate(gg.Radians(10))
 
-	// TODO work out numbers properly (Don't hack it)
+
+
+    // dc.RotateAbout(gg.Radians(10), 900, 400)
+
+    // TODO
+    // x = imagePositionX
+    // y = imagePositionY
+    // dc.RotateAbout(gg.Radians(10), x, y)
+    // dc.DrawImageAnchored(meImage, x, y, 0.0, 0.0)
+
+    // TODO work out numbers properly (Don't hack it)
+    // SETTING ONE
 	// dc.DrawImageAnchored(meImage, 1090, -75, 0.5, 0.5)
-	dc.DrawImage(meImage, 1020, 50)
+    // dc.DrawImage(meImage, 1020, 50)
+    
+    // SETTING TWO
+	dc.DrawImageAnchored(meImage, 900, 400, 0.0, 0.0)
 
 	// iw, ih := meImage.Bounds().Dx(), meImage.Bounds().Dy()
 	// dc.SetHexColor("#0000ff")
@@ -236,7 +251,72 @@ func addMe(dc *gg.Context) error {
 	return nil
 }
 
+// func circleCrop(imagePath string) error {
+
+// 	existingImageFile, err := os.Open(imagePath)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer existingImageFile.Close()
+
+// 	// Calling the generic image.Decode() will tell give us the data
+// 	// and type of image it is as a string. We expect "png"
+// 	_, imageData, err := image.Decode(existingImageFile)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	// We only need this because we already read from the file
+// 	// We have to reset the file pointer back to beginning
+// 	existingImageFile.Seek(0, 0)
+
+// 	// Decode to image.Image
+// 	var src image.Image
+// 	if imageData == "jpeg" {
+// 		src, err = jpeg.Decode(existingImageFile)
+// 	} else if imageData == "png" {
+// 		src, err = png.Decode(existingImageFile)
+// 	} else {
+// 		err = errors.New(fmt.Sprintf("unsupported imageData: %s", imageData))
+// 	}
+
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	// src = resize.Resize(180, 0, src, resize.Lanczos3)
+
+// 	dst := image.NewRGBA(src.Bounds())
+
+// 	centerPoint := &image.Point{src.Bounds().Dx() / 2, src.Bounds().Dy() / 2}
+// 	// Assuming square image
+// 	r := src.Bounds().Dx() / 2
+// 	circleMask := &circle{*centerPoint, r}
+// 	draw.DrawMask(dst, dst.Bounds(), src, image.ZP, circleMask, image.ZP, draw.Over)
+
+// 	rdst := imaging.Rotate(dst, 0.0, color.Transparent)
+
+// 	outputFname := "circular-me.png"
+// 	outputFile, err := os.Create(outputFname)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer outputFile.Close()
+
+// 	// Encode takes a writer interface and an image interface
+// 	// We pass it the File and the RGBA
+// 	err = png.Encode(outputFile, rdst)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
 func run() error {
+
+	// return circleCrop("me.jpg")
+
 	dc := gg.NewContext(1200, 628)
 
 	backgroundImageFilename := "background.jpg"
