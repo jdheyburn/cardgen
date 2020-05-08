@@ -54,10 +54,11 @@ func addLogo(dc *gg.Context) error {
 	dc.SetColor(color.White)
 	s := "JDHEYBURN"
 	marginX := 50.0
-	marginY := -10.0
+	marginY := -50.0
 	textWidth, textHeight := dc.MeasureString(s)
 	x := float64(dc.Width()) - textWidth - marginX
-	y := float64(dc.Height()) - textHeight - marginY
+	// y := float64(dc.Height()) - textHeight - marginY
+	y := textHeight - marginY
 	// y := 90.0
 	// x := marginX
 	// y = marginY
@@ -89,9 +90,26 @@ func addDomainText(dc *gg.Context) error {
 	return nil
 }
 
+func validateHeight(dc *gg.Context, s string, maxWidth, lineSpacing float64) error {
+
+	wrapped := dc.WordWrap(s, maxWidth)
+
+	h := float64(len(wrapped)) * dc.FontHeight() * lineSpacing
+	h -= (lineSpacing - 1) * dc.FontHeight()
+	
+	// Hardcoded based on experimenting - need a better way of determining this
+	maxHeight := 400.0
+	if h > maxHeight {
+		return errors.New("title is too long - too many lines")
+	}
+
+	return nil
+}
+
 func addTitle(dc *gg.Context) error {
 
-	title := "Post title here"
+	// TODO add this to variable
+	title := "Post title here which is a long title Keep Going and goinglong title"
 	textShadowColor := color.Black
 	textColor := color.White
 	fontPath := filepath.Join("fonts", "Open_Sans", "OpenSans-Bold.ttf")
@@ -103,10 +121,16 @@ func addTitle(dc *gg.Context) error {
 	x := textRightMargin
 	y := textTopMargin
 	maxWidth := float64(dc.Width()) - textRightMargin - textRightMargin
+	lineSpacing := 1.5
+
+	if err := validateHeight(dc, title, maxWidth, lineSpacing); err != nil {
+		return err
+	}
+
 	dc.SetColor(textShadowColor)
-	dc.DrawStringWrapped(title, x+1, y+1, 0, 0, maxWidth, 1.5, gg.AlignLeft)
+	dc.DrawStringWrapped(title, x+1, y+1, 0, 0, maxWidth, lineSpacing, gg.AlignLeft)
 	dc.SetColor(textColor)
-	dc.DrawStringWrapped(title, x, y, 0, 0, maxWidth, 1.5, gg.AlignLeft)
+	dc.DrawStringWrapped(title, x, y, 0, 0, maxWidth, lineSpacing, gg.AlignLeft)
 
 	return nil
 }
@@ -187,8 +211,6 @@ func circleCropMe(imagePath string) (string, error) {
 	mask := &circle{*c, r}
 	draw.DrawMask(dst, dst.Bounds(), src, image.ZP, mask, image.ZP, draw.Over)
 
-	// rotatedDst := imaging.Rotate(dst, 45.0, color.Transparent)
-
 	outputFname := "circular-me.png"
 	if err := outputFile(dst, outputFname); err != nil {
 		return "", errors.Wrap(err, "saving cropped image")
@@ -211,26 +233,17 @@ func addMe(dc *gg.Context) error {
 	}
 
 	marginX := 10
-	x := dc.Width() - meImage.Bounds().Dx() - marginX
-	y := dc.Height() - meImage.Bounds().Dy() 
-
-	rotateAroundX := float64(x) + (float64(meImage.Bounds().Dx()) / 2)
-	rotateAroundY := float64(y) + (float64(meImage.Bounds().Dy()) / 2)
+	x := dc.Width() - (meImage.Bounds().Dx() / 2) - marginX
+	y := dc.Height() - (meImage.Bounds().Dy() / 2)
 
 	dc.SetHexColor("#ffffff")
 	dc.FillPreserve()
 	dc.SetLineWidth(10)
-	// dc.Stroke()
-	dc.DrawCircle(rotateAroundX, rotateAroundY, float64(meImage.Bounds().Dx()/2))
-	// dc.Rotate(gg.Radians(10))
-	dc.SetHexColor("#ffffff")
-	dc.DrawPoint(1086.5, 115, 5.0)
+	dc.DrawCircle(float64(x), float64(y), float64(meImage.Bounds().Dx()/2))
 	dc.Stroke()
 
-	// dc.RotateAbout(gg.Radians(10), 900, 400)
-
-	dc.RotateAbout(gg.Radians(10), rotateAroundX, rotateAroundY)
-	dc.DrawImageAnchored(meImage, x, y, 0.0, 0.0)
+	dc.RotateAbout(gg.Radians(10), float64(x), float64(y))
+	dc.DrawImageAnchored(meImage, int(x), int(y), 0.5, 0.5)
 
 	return nil
 }
@@ -248,9 +261,9 @@ func run() error {
 
 	addOverlay(dc)
 
-	if err := addLogo(dc); err != nil {
-		return errors.Wrap(err, "render logo")
-	}
+	// if err := addLogo(dc); err != nil {
+	// 	return errors.Wrap(err, "render logo")
+	// }
 
 	if err := addDomainText(dc); err != nil {
 		return errors.Wrap(err, "render domain text")
