@@ -69,7 +69,9 @@ func addLogo(dc *gg.Context) error {
 
 func addDomainText(dc *gg.Context) error {
 	textColor := color.White
-	fontPath := filepath.Join("fonts", "Lato", "Lato-Regular.ttf")
+	fontPath := filepath.Join("fonts", "Source_Code_Pro", "SourceCodePro-Medium.ttf")
+	// fontPath := filepath.Join("fonts", "Ubuntu_Mono", "UbuntuMono-Bold.ttf")
+	// fontPath := filepath.Join("fonts", "Courier_Prime", "CourierPrime-Regular.ttf")
 	if err := dc.LoadFontFace(fontPath, 60); err != nil {
 		return err
 	}
@@ -81,7 +83,7 @@ func addDomainText(dc *gg.Context) error {
 		A: uint8(200),
 	}
 	dc.SetColor(mutedColor)
-	marginY := 30.0
+	marginY := 10.0
 	s := "https://jdheyburn.co.uk/"
 	_, textHeight := dc.MeasureString(s)
 	x := 70.0
@@ -109,10 +111,10 @@ func validateHeight(dc *gg.Context, s string, maxWidth, lineSpacing float64) err
 func addTitle(dc *gg.Context) error {
 
 	// TODO add this to variable
-	title := "Post title here which is a long title Keep Going and goinglong title"
+	title := "Who Goes Blogging 6:\n3 Steps to Better Hugo RSS Feeds!"
 	textShadowColor := color.Black
 	textColor := color.White
-	fontPath := filepath.Join("fonts", "Open_Sans", "OpenSans-Bold.ttf")
+	fontPath := filepath.Join("fonts", "Merriweather", "Merriweather-Regular.ttf")
 	if err := dc.LoadFontFace(fontPath, 90); err != nil {
 		return err
 	}
@@ -121,11 +123,11 @@ func addTitle(dc *gg.Context) error {
 	x := textRightMargin
 	y := textTopMargin
 	maxWidth := float64(dc.Width()) - textRightMargin - textRightMargin
-	lineSpacing := 1.5
+	lineSpacing := 1.65
 
-	if err := validateHeight(dc, title, maxWidth, lineSpacing); err != nil {
-		return err
-	}
+	// if err := validateHeight(dc, title, maxWidth, lineSpacing); err != nil {
+	// 	return err
+	// }
 
 	dc.SetColor(textShadowColor)
 	dc.DrawStringWrapped(title, x+1, y+1, 0, 0, maxWidth, lineSpacing, gg.AlignLeft)
@@ -252,13 +254,16 @@ func run() error {
 
 	dc := gg.NewContext(1200, 628)
 
-	backgroundImageFilename := "background.jpg"
+	// backgroundImageFilename := "background.jpg"
 	outputFilename := "output.png"
 
-	if err := drawBackground(dc, backgroundImageFilename); err != nil {
-		return errors.Wrap(err, "load background image")
-	}
+	// if err := drawBackground(dc, backgroundImageFilename); err != nil {
+	// 	return errors.Wrap(err, "load background image")
+	// }
 
+	dc.DrawRectangle(0, 0, 1200, 628)
+	dc.SetColor(color.White)
+	dc.Fill()
 	addOverlay(dc)
 
 	// if err := addLogo(dc); err != nil {
