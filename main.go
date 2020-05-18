@@ -45,27 +45,28 @@ func addOverlay(dc *gg.Context) {
 	dc.Fill()
 }
 
-func addLogo(dc *gg.Context) error {
-	fontPath := filepath.Join("fonts", "Lato", "Lato-Regular.ttf")
-	if err := dc.LoadFontFace(fontPath, 70); err != nil {
-		return err
-	}
+// Used to generate logo - commented while using image
+// func addLogo(dc *gg.Context) error {
+// 	fontPath := filepath.Join("fonts", "Lato", "Lato-Regular.ttf")
+// 	if err := dc.LoadFontFace(fontPath, 70); err != nil {
+// 		return err
+// 	}
 
-	dc.SetColor(color.White)
-	s := "JDHEYBURN"
-	marginX := 50.0
-	marginY := -50.0
-	textWidth, textHeight := dc.MeasureString(s)
-	x := float64(dc.Width()) - textWidth - marginX
-	// y := float64(dc.Height()) - textHeight - marginY
-	y := textHeight - marginY
-	// y := 90.0
-	// x := marginX
-	// y = marginY
-	dc.DrawString(s, x, y)
+// 	dc.SetColor(color.White)
+// 	s := "JDHEYBURN"
+// 	marginX := 50.0
+// 	marginY := -50.0
+// 	textWidth, textHeight := dc.MeasureString(s)
+// 	x := float64(dc.Width()) - textWidth - marginX
+// 	// y := float64(dc.Height()) - textHeight - marginY
+// 	y := textHeight - marginY
+// 	// y := 90.0
+// 	// x := marginX
+// 	// y = marginY
+// 	dc.DrawString(s, x, y)
 
-	return nil
-}
+// 	return nil
+// }
 
 func addDomainText(dc *gg.Context) error {
 	textColor := color.White
@@ -98,7 +99,7 @@ func validateHeight(dc *gg.Context, s string, maxWidth, lineSpacing float64) err
 
 	h := float64(len(wrapped)) * dc.FontHeight() * lineSpacing
 	h -= (lineSpacing - 1) * dc.FontHeight()
-	
+
 	// Hardcoded based on experimenting - need a better way of determining this
 	maxHeight := 400.0
 	if h > maxHeight {
@@ -125,9 +126,9 @@ func addTitle(dc *gg.Context) error {
 	maxWidth := float64(dc.Width()) - textRightMargin - textRightMargin
 	lineSpacing := 1.65
 
-	// if err := validateHeight(dc, title, maxWidth, lineSpacing); err != nil {
-	// 	return err
-	// }
+	if err := validateHeight(dc, title, maxWidth, lineSpacing); err != nil {
+		return err
+	}
 
 	dc.SetColor(textShadowColor)
 	dc.DrawStringWrapped(title, x+1, y+1, 0, 0, maxWidth, lineSpacing, gg.AlignLeft)
@@ -168,7 +169,9 @@ func decodeImage(f *os.File) (image.Image, error) {
 
 	// We only need this because we already read from the file
 	// We have to reset the file pointer back to beginning
-	f.Seek(0, 0)
+	if _, err = f.Seek(0, 0); err != nil {
+		return nil, err
+	}
 
 	switch t {
 	case "jpeg":
@@ -179,12 +182,18 @@ func decodeImage(f *os.File) (image.Image, error) {
 	return nil, errors.New(fmt.Sprintf("unsupported image type: %s", t))
 }
 
-func outputFile(dst *image.RGBA, outputPath string) error {
+func outputFile(dst *image.RGBA, outputPath string) (err error) {
 	f, err := os.Create(outputPath)
 	if err != nil {
 		return errors.Wrap(err, "create output file")
 	}
-	defer f.Close()
+
+	// Note to self - not sure how to wrap around existing err
+	defer func() {
+		if ferr := f.Close(); ferr != nil && err == nil {
+			err = errors.Wrap(ferr, "closing output file")
+		}
+	}()
 
 	// Encode takes a writer interface and an image interface
 	// We pass it the File and the RGBA
@@ -197,7 +206,13 @@ func circleCropMe(imagePath string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "opening source image file")
 	}
-	defer existingImageFile.Close()
+	// Note to self - not sure how to wrap around existing err
+	defer func() (string, error) {
+		if ferr := existingImageFile.Close(); ferr != nil && err == nil {
+			return "", errors.Wrap(ferr, "closing source image file")
+		}
+		return "", err
+	}()
 
 	src, err := decodeImage(existingImageFile)
 	if err != nil {
@@ -207,11 +222,11 @@ func circleCropMe(imagePath string) (string, error) {
 	src = resize.Resize(180, 0, src, resize.Lanczos3)
 	dst := image.NewRGBA(src.Bounds())
 	c := &image.Point{src.Bounds().Dx() / 2, src.Bounds().Dy() / 2}
-	
+
 	// Assuming square image to draw the circle around
 	r := src.Bounds().Dx() / 2
 	mask := &circle{*c, r}
-	draw.DrawMask(dst, dst.Bounds(), src, image.ZP, mask, image.ZP, draw.Over)
+	draw.DrawMask(dst, dst.Bounds(), src, image.Point{}, mask, image.Point{}, draw.Over)
 
 	outputFname := "circular-me.png"
 	if err := outputFile(dst, outputFname); err != nil {
@@ -254,16 +269,17 @@ func run() error {
 
 	dc := gg.NewContext(1200, 628)
 
-	// backgroundImageFilename := "background.jpg"
+	backgroundImageFilename := "background.jpg"
 	outputFilename := "output.png"
 
-	// if err := drawBackground(dc, backgroundImageFilename); err != nil {
-	// 	return errors.Wrap(err, "load background image")
-	// }
+	if err := drawBackground(dc, backgroundImageFilename); err != nil {
+		return errors.Wrap(err, "load background image")
+	}
 
-	dc.DrawRectangle(0, 0, 1200, 628)
-	dc.SetColor(color.White)
-	dc.Fill()
+	// Uncomment below for blank background
+	// dc.DrawRectangle(0, 0, 1200, 628)
+	// dc.SetColor(color.White)
+	// dc.Fill()
 	addOverlay(dc)
 
 	// if err := addLogo(dc); err != nil {
