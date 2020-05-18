@@ -7,6 +7,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -200,19 +201,21 @@ func outputFile(dst *image.RGBA, outputPath string) (err error) {
 	return png.Encode(f, dst)
 }
 
+func CloseQuietly(v interface{}) {
+	if d, ok := v.(io.Closer); ok {
+		_ = d.Close()
+	}
+}
+
 func circleCropMe(imagePath string) (string, error) {
 
-	existingImageFile, err := os.Open(imagePath)
+	existingImageFile, err := os.Open(filepath.Clean(imagePath))
 	if err != nil {
 		return "", errors.Wrap(err, "opening source image file")
 	}
-	// Note to self - not sure how to wrap around existing err
-	defer func() (string, error) {
-		if ferr := existingImageFile.Close(); ferr != nil && err == nil {
-			return "", errors.Wrap(ferr, "closing source image file")
-		}
-		return "", err
-	}()
+
+	// TODO better way to close properly with error checking - ignoring for now since this is a read-only operation
+	defer CloseQuietly(existingImageFile)
 
 	src, err := decodeImage(existingImageFile)
 	if err != nil {
