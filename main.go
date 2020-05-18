@@ -201,7 +201,7 @@ func outputFile(dst *image.RGBA, outputPath string) (err error) {
 	return png.Encode(f, dst)
 }
 
-func CloseQuietly(v interface{}) {
+func closeQuietly(v interface{}) {
 	if d, ok := v.(io.Closer); ok {
 		_ = d.Close()
 	}
@@ -215,7 +215,7 @@ func circleCropMe(imagePath string) (string, error) {
 	}
 
 	// TODO better way to close properly with error checking - ignoring for now since this is a read-only operation
-	defer CloseQuietly(existingImageFile)
+	defer closeQuietly(existingImageFile)
 
 	src, err := decodeImage(existingImageFile)
 	if err != nil {
