@@ -1,4 +1,6 @@
 # cardgen
+[![Go Report Card](https://goreportcard.com/badge/github.com/jdheyburn/cardgen)](https://goreportcard.com/report/github.com/jdheyburn/cardgen)
+
 Golang lib for generating blog post cards for [jdheyburn.co.uk](https://github.com/jdheyburn/jdheyburn.co.uk/)
 
 **Currently work in progress**
